@@ -21,6 +21,8 @@ func connectDb() (db *gorm.DB) {
 	checkErr(err)
 	err = db.AutoMigrate(&News{})
 	checkErr(err)
+	err = db.AutoMigrate(&Comment{})
+	checkErr(err)
 	return db
 }
 

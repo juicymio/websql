@@ -82,7 +82,7 @@ func main() {
 		}
 
 		if news.IsShow {
-			c.HTML(http.StatusOK, "news.html", gin.H{
+			c.HTML(http.StatusOK, "news.html", map[string]interface{}{
 				"news":     news,
 				"comments": comments,
 			})
