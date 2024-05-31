@@ -1,0 +1,41 @@
+.login-body {
+    background: #9ed2c8;
+}
+
+.login-main {
+    background: #fff;
+    max-width: 500px;
+    margin: 100px auto;
+    border: 1px solid #eee;
+    padding: 50px 20px;
+    text-align: center;
+    border-radius: 2%;
+}
+
+.login-username, .login-password {
+    margin-bottom: 1.25em;
+    width: 300px;
+    height: 30px;
+    padding: 0 15px;
+}
+
+.login-href, .register-href {
+    text-align: right;
+    padding: 0 85px;
+    margin: 0;
+}
+
+.login-button {
+    margin-top: 2em;
+    width: 335px;
+    height: 40px;
+    font-size: 18px;
+}
+
+.register-body {
+    background: #9ed2ae;
+}
+
+.admin-body {
+    background: #ffabab;
+}

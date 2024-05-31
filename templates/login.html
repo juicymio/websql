@@ -3,22 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>登录</title>
     <link rel="stylesheet" href="/assets/style.css">
-    <script src="/assets/axios.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
-<h1>Login</h1>
-<form id="addUserForm">
-    <label for="username">
-        <input type="text" id="username" placeholder="Name">
-    </label>
-    <br/>
-    <label for="password">
-        <input type="password" id="password" placeholder="PassWord">
-    </label>
-    <br/>
-    <button type="submit">Login</button>
-</form>
+<body class="login-body">
+<div class="login-main">
+    <h1>登录</h1>
+    <div class="login-form">
+        <form id="addUserForm" >
+            <label for="username">
+            </label>
+            <input type="text" id="username" placeholder="用户名" class="login-username">
+            <label for="password">
+            </label>
+            <input type="password" id="password" placeholder="密码" class="login-password">
+            <p class="login-href">
+                <a href="/register">注册账号</a>
+            </p>
+            <button type="submit" class="login-button">登录</button>
+        </form>
+    </div>
+</div>
+</body>
+
 <script>
     document.getElementById('addUserForm').addEventListener('submit', function(e) {
         e.preventDefault();

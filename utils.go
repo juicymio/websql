@@ -7,32 +7,37 @@ import (
 )
 
 type Users struct {
+	ID       int
 	UserName string
 	Password string
-	Id       int
 }
 
 type Admins struct {
-	UserName string
-	Password string
-	Id       int
+	ID  int
+	UID int
 }
 
 type News struct {
-	Time    time.Time
-	Title   string
-	Content string
-	Author  string
-	Id      int
-	IsShow  bool
+	ID        int
+	UID       int
+	Title     string
+	Content   string
+	IsShow    bool
+	Timestamp time.Time
 }
 
-type Comment struct {
-	Timestamp time.Time
-	Content   string
+type Comments struct {
 	ID        int
-	UserID    int
-	NewsID    int
+	UID       int
+	NID       int
+	Content   string
+	Timestamp time.Time
+}
+
+type Render struct {
+	Author    string
+	Content   string
+	Timestamp time.Time
 }
 
 func checkErr(err error) {

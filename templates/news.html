@@ -5,25 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.news.Title}}</title>
     <link rel="stylesheet" href="/assets/style.css">
-</head>
-  {{with .news}}
-  <p>{{.Content}}</p>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script></head>
+  <p>{{.news.Content}}</p>
   <p>Author: {{.Author}}</p>
-  <p> Time: {{.Time}}</p>
+  <p> Time: {{.news.Timestamp}}</p>
 
 <form id="addCommentForm">
-    <input type="hidden" id="news_id" value="{{.Id}}">
+    <input type="hidden" id="news_id" value="{{.news.ID}}">
     <textarea id="content" placeholder="Add a comment"></textarea>
     <br>
     <button type="submit">Submit</button>
 </form>
 
-  {{end}}
+
 <h2>Comments</h2>
-{{with .comments}}
+{{range .comments}}
     <div>
         <p>{{.Content}}</p>
-        <p>Posted by: {{.UserID}} at {{.Timestamp}}</p>
+        <p>Posted by: {{.Author}} at {{.Timestamp}}</p>
     </div>
 {{end}}
 
@@ -34,7 +33,7 @@
         const content = document.getElementById('content').value;
 
         axios.post('/api/add_comment', {
-            news_id: newsID,
+            nid: Number(newsID),
             content: content,
         }).then(function(response) {
             alert(response.data["message"]);

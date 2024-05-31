@@ -3,12 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os/exec"
-	"time"
-
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"os/exec"
 )
 
 func connectDb() (db *gorm.DB) {
@@ -21,7 +19,7 @@ func connectDb() (db *gorm.DB) {
 	checkErr(err)
 	err = db.AutoMigrate(&News{})
 	checkErr(err)
-	err = db.AutoMigrate(&Comment{})
+	err = db.AutoMigrate(&Comments{})
 	checkErr(err)
 	return db
 }
@@ -56,93 +54,82 @@ func restoreDb(dbName, username, password, backupFile string) error {
 }
 
 // User
-func getUserPasswd(db *gorm.DB, name string) string {
+// 通过用户名查询密码并判断返回
+func checkUser(db *gorm.DB, users Users) (int, error) {
+	var getUser Users
+	res := db.Select("password").Where("user_name = ?", users.UserName).First(&getUser)
+	if res.Error != nil {
+		return -1, res.Error
+	}
+
+	if getUser.Password != getPasswordHash(users.Password) {
+		return -1, errors.New("wrong password")
+	} else {
+		uid, _ := userChange(db, -1, users.UserName)
+		return uid, nil
+	}
+}
+
+func userChange(db *gorm.DB, id int, username string) (int, string) {
 	var user Users
-	db.Select("password").Where("user_name = ?", name).First(&user)
-	return user.Password
-}
-
-// 0-success, 1-user exist, 2-unknown error
-func register(db *gorm.DB, name string, password string) int {
-	user := Users{UserName: name, Password: getPasswordHash(password)}
-	fmt.Println(user)
-	if errors.Is(db.Where("user_name = ?", name).First(&Users{}).Error, gorm.ErrRecordNotFound) {
-		res := db.Create(&user)
-		if res.Error != nil {
-			return 2
-		} else {
-			return 0
-		}
+	if username == "" {
+		//fmt.Println(id)
+		db.Select("user_name").Where("id = ?", id).First(&user)
+		return -1, user.UserName
 	} else {
-		return 1
+		db.Select("id").Where("user_name = ?", username).First(&user)
+		return user.ID, ""
 	}
 }
 
-// 0-success, 1-user exist, 2-unknown error
-func updateUser(db *gorm.DB, name string, newName string, password string) int {
-	user := Users{UserName: newName, Password: getPasswordHash(password)}
-	if errors.Is(db.Where("user_name = ?", newName).First(&Users{}).Error, gorm.ErrRecordNotFound) || name == newName {
-		res := db.Model(&user).Where("user_name = ?", name).Updates(user)
-		if res.Error != nil {
-			return 2
-		} else {
-			return 0
-		}
-	} else {
-		return 1
+func register(db *gorm.DB, user Users) error {
+	if !errors.Is(db.Where("user_name = ?", user.UserName).First(&Users{}).Error, gorm.ErrRecordNotFound) {
+		return errors.New("user already exists")
 	}
+
+	res := db.Create(&user)
+	return res.Error
+}
+
+// 输入用户id更新信息
+func updateUser(db *gorm.DB, user Users) error {
+	if !errors.Is(db.Where("user_name = ?", user.UserName).First(&Users{}).Error, gorm.ErrRecordNotFound) {
+		return errors.New("user already exists")
+	}
+
+	res := db.Model(&user).Where("id = ?", user.ID).Updates(user)
+	return res.Error
 }
 
 // Admin
-func getAdminPasswd(db *gorm.DB, name string) string {
-	var admin Admins
-	db.Select("password").Where("user_name = ?", name).First(&admin)
-	return admin.Password
-}
 
-// 0-success, 1-user exist, 2-unknown error
-//func updateAdmin(db *gorm.DB, name string, newName string, password string) int {
-//	var admin = Admins{UserName: newName, Password: password}
-//	if errors.Is(db.Where("user_name = ?", name).First(&Admins{}).Error, gorm.ErrRecordNotFound) {
-//		res := db.Model(&admin).Where("user_name = ?", name).Updates(admin)
-//		if res.Error != nil {
-//			return 2
-//		} else {
-//			return 0
-//		}
-//	} else {
-//		return 1
-//	}
-//}
+func checkAdmin(db *gorm.DB, users Users) (int, error) {
+	uid, err := checkUser(db, users)
+	if err != nil {
+		return -1, err
+	}
+
+	if errors.Is(db.Where("uid = ?", uid).First(&Admins{}).Error, gorm.ErrRecordNotFound) {
+		return -1, errors.New("not Admin")
+	} else {
+		return uid, nil
+	}
+}
 
 // News
-func addNews(db *gorm.DB, title string, content string, isShow bool, author string) bool {
-	news := News{Title: title, Content: content, Time: time.Now(), IsShow: isShow, Author: author}
+func addNews(db *gorm.DB, news News) error {
 	res := db.Create(&news)
-	if res.Error == nil {
-		return true
-	} else {
-		return false
-	}
+	return res.Error
 }
 
-func updateNews(db *gorm.DB, id int, newTitle string, content string, isShow bool) bool {
-	news := News{Title: newTitle, Content: content, IsShow: isShow}
-	res := db.Model(&news).Where("id = ?", id).Select("title", "content", "is_show").Updates(news)
-	if res.Error == nil {
-		return true
-	} else {
-		return false
-	}
+func updateNews(db *gorm.DB, news News) error {
+	res := db.Model(&news).Where("id = ?", news.ID).Select("title", "content", "is_show").Updates(news)
+	return res.Error
 }
 
-func deleteNews(db *gorm.DB, id int) bool {
+func deleteNews(db *gorm.DB, id int) error {
 	res := db.Where("id = ?", id).Delete(&News{})
-	if res.Error == nil {
-		return true
-	} else {
-		return false
-	}
+	return res.Error
 }
 
 func getAllNews(db *gorm.DB) []News {
@@ -154,23 +141,18 @@ func getAllNews(db *gorm.DB) []News {
 func getNews(db *gorm.DB, id string) (News, error) {
 	var news News
 	res := db.Where("id = ?", id).First(&news)
-	err := res.Error
-	return news, err
+	return news, res.Error
 }
 
-// Comment
-func addComment(db *gorm.DB, userID int, newsID int, content string) bool {
-	comment := Comment{UserID: userID, NewsID: newsID, Content: content, Timestamp: time.Now()}
-	res := db.Create(&comment)
-	if res.Error == nil {
-		return true
-	} else {
-		return false
-	}
+// Comments
+func addComment(db *gorm.DB, comments Comments) error {
+	res := db.Create(&comments)
+	return res.Error
 }
 
-func getComments(db *gorm.DB, newsID string) ([]Comment, error) {
-	var comments []Comment
-	res := db.Where("news_id = ?", newsID).Find(&comments)
+func getComments(db *gorm.DB, NID string) ([]Comments, error) {
+	var comments []Comments
+	res := db.Where("n_id = ?", NID).Find(&comments)
+	fmt.Println(comments)
 	return comments, res.Error
 }
