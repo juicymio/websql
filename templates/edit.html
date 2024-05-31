@@ -1,0 +1,65 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit News</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <script src="/assets/axios.js"></script>
+</head>
+<h1>Edit News</h1>
+<span>News id:</span>
+<span id="nid">{{.Id}}</span>
+<form id="addUserForm">
+    <label for="title">
+
+    </label>
+    <input type="text" id="title" value="{{.Title}}" placeholder="title">
+    <input type="checkbox" id="isShow" name="isShow" value="true" {{if eq .IsShow true }} checked {{end}}/>
+    <label for="isShow">isShow</label>
+    <br/>
+    <label for="content">
+
+    </label>
+    <textarea id="content" placeholder="content">{{.Content}}</textarea>
+    <br/>
+    <button type="submit">submit</button>
+    <button id = "delete" type = "button">Delete</button>
+</form>
+<script>
+    document.getElementById('addUserForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nid = document.getElementById('nid').innerText;
+        const title = document.getElementById('title').value;
+        const isShow = document.getElementById('isShow').checked;
+        const content = document.getElementById('content').value;
+
+        axios.post('/api/update_news', {
+            id: Number(nid),
+            title: title,
+            content: content,
+            isShow: isShow,
+        }).then(function(response) {
+            alert(response.data["message"]);
+            window.location.herf="/"
+        }).catch(function(error) {
+            alert('Failed to Edit');
+            console.error(error);
+        });
+    });
+
+    document.getElementById('delete').addEventListener('click', function(e) {
+        const nid = document.getElementById('nid').innerText;
+
+        axios.post('/api/delete_news', {
+            id: Number(nid),
+        }).then(function(response) {
+            alert(response.data["message"]);
+            window.location.href="/"
+        }).catch(function(error) {
+            alert('Failed to Delete');
+            console.error(error);
+        });
+    });
+
+</script>
+</html>

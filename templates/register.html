@@ -1,0 +1,39 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <script src="/assets/axios.js"></script>
+</head>
+<h1>Register</h1>
+<form id="addUserForm">
+    <label for="username">
+        <input type="text" id="username" placeholder="Name">
+    </label>
+    <br/>
+    <label for="password">
+        <input type="password" id="password" placeholder="PassWord">
+    </label>
+    <br/>
+    <button type="submit">Add User</button>
+</form>
+<script>
+    document.getElementById('addUserForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        axios.post('/api/register', {
+            username: username,
+            password: password,
+        }).then(function(response) {
+            alert(response.data["message"]);
+            window.location.replace("/login")
+        }).catch(function(error) {
+            alert('Failed to add user');
+            console.error(error);
+        });
+    });
+</script>
+</html>

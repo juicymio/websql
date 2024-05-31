@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My News</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<h1>My News Site</h1>
+<ul>
+    {{range .}}
+        <li><a href="/news/{{.Id}}">{{.Title}}</a></li>
+    {{end}}
+</ul>
+</html>

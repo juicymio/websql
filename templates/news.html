@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<h1>{{.Title}}</h1>
+  <p>{{.Content}}</p>
+  <p>Author: {{.Author}}</p>
+  <p> Time: {{.Time}}</p>
+
+<form id="addCommentForm">
+    <input type="hidden" id="news_id" value="{{.Id}}">
+    <textarea id="content" placeholder="Add a comment"></textarea>
+    <br>
+    <button type="submit">Submit</button>
+</form>
+
+<h2>Comments</h2>
+{{range .comments}}
+    <div>
+        <p>{{.Content}}</p>
+        <p>Posted by: {{.UserID}} at {{.Timestamp}}</p>
+    </div>
+{{end}}
+
+<script>
+    document.getElementById('addCommentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const newsID = document.getElementById('news_id').value;
+        const content = document.getElementById('content').value;
+
+        axios.post('/api/add_comment', {
+            news_id: newsID,
+            content: content,
+        }).then(function(response) {
+            alert(response.data["message"]);
+            location.reload();
+        }).catch(function(error) {
+            alert('Failed to add comment');
+            console.error(error);
+        });
+    });
+</script>
+
+</html>
