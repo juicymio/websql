@@ -3,10 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os/exec"
+
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"os/exec"
 )
 
 func connectDb() (db *gorm.DB) {
@@ -77,7 +78,7 @@ func checkUser(db *gorm.DB, users Users) (int, error) {
 func userChange(db *gorm.DB, id int, username string) (int, string) {
 	var user Users
 	if username == "" {
-		//fmt.Println(id)
+		// fmt.Println(id)
 		db.Select("user_name").Where("id = ?", id).First(&user)
 		return -1, user.UserName
 	} else {
@@ -169,4 +170,17 @@ func addRate(db *gorm.DB, rate RateNews) error {
 func addLike(db *gorm.DB, like LikeComment) error {
 	res := db.Create(&like)
 	return res.Error
+}
+
+func searchNews(db *gorm.DB, query string) ([]News, error) {
+	var news []News
+
+	likeQuery := "%" + query + "%"
+	res := db.Joins("left join users on news.UID = users.ID").Where("news.Title LIKE ? OR news.Content LIKE ? OR users.user_name LIKE ?", likeQuery, likeQuery, likeQuery).Find(&news)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return news, nil
 }

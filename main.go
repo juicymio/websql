@@ -3,9 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
 	"os"
@@ -13,6 +10,10 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -87,7 +88,7 @@ func main() {
 			c.HTML(http.StatusNotFound, "404.html", nil)
 			return
 		}
-		//news.Content = n
+		// news.Content = n
 		comments, err := getComments(db, id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve comments"})
@@ -143,13 +144,33 @@ func main() {
 
 	r.GET("/search", func(c *gin.Context) {
 		session := sessions.Default(c)
-		//isAdmin := session.Get("isAdmin")
+		isAdmin := session.Get("isAdmin").(bool)
 		uid := session.Get("uid")
 		if uid == nil {
 			c.Redirect(http.StatusFound, "/login")
 			return
 		}
-		// TODO 搜索
+		// TODO: add search function
+		query := c.Query("data")           // Get search query from request parameters
+		news, err := searchNews(db, query) // Call searchNews function
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve search results"})
+			return
+		}
+		// Render search results
+		var outNews []RenderNews
+
+		for _, mynew := range news {
+			if mynew.IsShow || isAdmin {
+				_, author := userChange(db, mynew.UID, "")
+				render := RenderNews{ID: mynew.ID, Title: mynew.Title, Author: author, Content: template.HTML(truncateHTML(mynew.Content, 100)), Timestamp: mynew.Timestamp}
+				outNews = append(outNews, render)
+			}
+		}
+		c.HTML(http.StatusOK, "search.html", gin.H{
+			"news":    outNews,
+			"isAdmin": session.Get("isAdmin"),
+		})
 	})
 
 	// 后端
