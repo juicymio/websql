@@ -21,6 +21,10 @@ func connectDb() (db *gorm.DB) {
 	checkErr(err)
 	err = db.AutoMigrate(&Comments{})
 	checkErr(err)
+	err = db.AutoMigrate(&RateNews{})
+	checkErr(err)
+	err = db.AutoMigrate(&Comments{})
+	checkErr(err)
 	return db
 }
 
@@ -155,4 +159,14 @@ func getComments(db *gorm.DB, NID string) ([]Comments, error) {
 	res := db.Where("n_id = ?", NID).Find(&comments)
 	fmt.Println(comments)
 	return comments, res.Error
+}
+
+func addRate(db *gorm.DB, rate RateNews) error {
+	res := db.Create(&rate)
+	return res.Error
+}
+
+func addLike(db *gorm.DB, like LikeComment) error {
+	res := db.Create(&like)
+	return res.Error
 }

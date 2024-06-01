@@ -2,11 +2,16 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"html/template"
 	"net/http"
+	"os"
+	"path"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -18,6 +23,7 @@ func main() {
 	r.Use(sessions.Sessions("session", store))
 
 	r.Static("/assets", "./assets")
+	r.Static("/uploads", "./uploads")
 	r.LoadHTMLGlob("templates/*")
 
 	// frontend
@@ -28,15 +34,21 @@ func main() {
 			c.Redirect(http.StatusFound, "/login")
 			return
 		}
+		isAdmin := session.Get("isAdmin").(bool)
 		news := getAllNews(db)
-		var outNews []News
+		var outNews []RenderNews
 
 		for _, mynew := range news {
-			if mynew.IsShow {
-				outNews = append(outNews, mynew)
+			if mynew.IsShow || isAdmin {
+				_, author := userChange(db, mynew.UID, "")
+				render := RenderNews{ID: mynew.ID, Title: mynew.Title, Author: author, Content: template.HTML(truncateHTML(mynew.Content, 100)), Timestamp: mynew.Timestamp}
+				outNews = append(outNews, render)
 			}
 		}
-		c.HTML(http.StatusOK, "index.html", outNews)
+		c.HTML(http.StatusOK, "index.html", gin.H{
+			"news":    outNews,
+			"isAdmin": isAdmin,
+		})
 	})
 
 	r.GET("/login", func(c *gin.Context) {
@@ -48,7 +60,12 @@ func main() {
 	})
 
 	r.GET("/update_user", func(c *gin.Context) {
-		// TODO 鉴权
+		session := sessions.Default(c)
+		uid := session.Get("uid")
+		if uid == nil {
+			c.Redirect(http.StatusFound, "/login")
+			return
+		}
 		c.HTML(http.StatusOK, "update_user.html", nil)
 	})
 
@@ -63,30 +80,33 @@ func main() {
 			c.Redirect(http.StatusFound, "/login")
 			return
 		}
+		isAdmin := session.Get("isAdmin").(bool)
 		id := c.Param("id")
 		news, err := getNews(db, id)
 		if err != nil {
 			c.HTML(http.StatusNotFound, "404.html", nil)
 			return
 		}
+		//news.Content = n
 		comments, err := getComments(db, id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve comments"})
 			return
 		}
-		_, NewsAuthor := userChange(db, news.UID, "")
 
-		var outComments []Render
-
+		var outComments []RenderComments
 		for _, myComments := range comments {
 			_, author := userChange(db, myComments.UID, "")
-			outComments = append(outComments, Render{Author: author, Content: myComments.Content, Timestamp: myComments.Timestamp})
+			outComments = append(outComments, RenderComments{Author: author, Content: myComments.Content, Timestamp: myComments.Timestamp})
 		}
 
-		if news.IsShow {
+		if news.IsShow || isAdmin {
+			_, NewsAuthor := userChange(db, news.UID, "")
+			renderNews := RenderNews{ID: news.ID, Title: news.Title, Author: NewsAuthor, Content: template.HTML(news.Content), Timestamp: news.Timestamp}
+			fmt.Println(renderNews.Content)
 			c.HTML(http.StatusOK, "news.html", gin.H{
-				"news":     news,
-				"Author":   NewsAuthor,
+				"news":     renderNews,
+				"isAdmin":  isAdmin,
 				"comments": outComments,
 			})
 		} else {
@@ -121,6 +141,17 @@ func main() {
 		}
 	})
 
+	r.GET("/search", func(c *gin.Context) {
+		session := sessions.Default(c)
+		//isAdmin := session.Get("isAdmin")
+		uid := session.Get("uid")
+		if uid == nil {
+			c.Redirect(http.StatusFound, "/login")
+			return
+		}
+		// TODO 搜索
+	})
+
 	// 后端
 	r.POST("/api/register", func(c *gin.Context) {
 		var user Users
@@ -144,12 +175,12 @@ func main() {
 		}
 	})
 
-	r.POST("/api/logout", func(c *gin.Context) {
+	r.GET("/logout", func(c *gin.Context) {
 		session := sessions.Default(c)
 		session.Clear()
 		session.Save()
 		c.SetCookie("session", "", -1, "/", "127.0.0.1", false, false)
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
+		c.Redirect(http.StatusFound, "/login")
 	})
 
 	r.POST("/api/login", func(c *gin.Context) {
@@ -296,6 +327,76 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"message": "Comments added successfully"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to add comment"})
+		}
+	})
+
+	r.POST("/api/rate", func(c *gin.Context) {
+		session := sessions.Default(c)
+		uid := session.Get("uid")
+		if uid == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Login first!"})
+			return
+		}
+
+		var rate RateNews
+		if err := c.ShouldBindJSON(&rate); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		rate = RateNews{UID: uid.(int), NID: rate.NID, Rate: rate.Rate}
+		if addRate(db, rate) == nil {
+			c.JSON(http.StatusOK, gin.H{"message": "Rate added successfully"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to add rate"})
+		}
+	})
+
+	r.POST("/api/like", func(c *gin.Context) {
+		session := sessions.Default(c)
+		uid := session.Get("uid")
+		if uid == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Login first!"})
+			return
+		}
+
+		var like LikeComment
+		if err := c.ShouldBindJSON(&like); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		like = LikeComment{UID: uid.(int), CID: like.CID, Value: like.Value}
+		if addLike(db, like) == nil {
+			c.JSON(http.StatusOK, gin.H{"message": "Like added successfully"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to add like"})
+		}
+	})
+
+	r.POST("/api/uploads", func(c *gin.Context) {
+		session := sessions.Default(c)
+		isAdmin := session.Get("isAdmin")
+		if isAdmin != true {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not admin!"})
+			return
+		}
+
+		f, err := c.FormFile("wangeditor-uploaded-image")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"errno": 1, "message": "上传失败!"})
+			return
+		} else {
+			fileExt := strings.ToLower(path.Ext(f.Filename))
+			if fileExt != ".png" && fileExt != ".jpg" && fileExt != ".gif" && fileExt != ".jpeg" {
+				c.JSON(http.StatusBadRequest, gin.H{"errno": 1, "message": "上传失败!只允许png,jpg,gif,jpeg文件"})
+				return
+			}
+			fileName := getMd5(fmt.Sprintf("%s%s", f.Filename, time.Now().String()))
+			fildDir := fmt.Sprintf("uploads/%d%s/", time.Now().Year(), time.Now().Month().String())
+			_, res := os.Stat(fildDir)
+			if os.IsNotExist(res) {
+				os.Mkdir(fildDir, os.ModePerm)
+			}
+			filepath := fmt.Sprintf("%s%s%s", fildDir, fileName, fileExt)
+			c.SaveUploadedFile(f, filepath)
+			c.JSON(http.StatusOK, gin.H{"errno": 0, "data": gin.H{"url": "/" + filepath}})
 		}
 	})
 

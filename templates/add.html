@@ -4,35 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add News</title>
-    <link rel="stylesheet" href="/assets/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script></head>
-<h1>Add News</h1>
-<form id="addUserForm">
-    <label for="title">
-
-    </label>
-    <input type="text" id="title" placeholder="title">
-    <input type="checkbox" id="isShow" name="isShow" checked />
-    <label for="isShow">isShow</label>
-    <br/>
-    <label for="content">
-
-    </label>
-    <textarea id="content" placeholder="content"></textarea>
-    <br/>
-    <button type="submit">submit</button>
-</form>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link href="https://unpkg.com/@wangeditor/editor@latest/dist/css/style.css" rel="stylesheet">
+    <script src="https://unpkg.com/@wangeditor/editor@latest/dist/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<style>
+    #editor—wrapper {
+        border: 1px solid #ccc;
+        z-index: 100; /* 按需定义 */
+        max-width: 1200px;
+    }
+    #toolbar-container { border-bottom: 1px solid #ccc; }
+    #editor-container { height: 500px; }
+</style>
+<body style="background-color: #e9f2f9">
+<div class="edit-main" >
+    <h1>新建文章</h1>
+    <form id="addUserForm">
+        <div>
+            <label for="title">
+            </label>
+            <input type="text" id="title" class="edit-title" placeholder="文章标题">
+            <input type="checkbox" id="isShow" name="isShow" class="edit-isShow" value="true" checked />
+            <label for="isShow">是否显示</label>
+            <button type="submit" class="edit-submit">提交</button>
+        </div>
+        <div style="display: inline-block">
+            <div id="editor—wrapper" style="text-align: left">
+                <div id="toolbar-container"><!-- 工具栏 --></div>
+                <div id="editor-container"><!-- 编辑器 --></div>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
 <script>
+    const { createEditor, createToolbar } = window.wangEditor
+    const editorConfig = {
+        placeholder: '正文内容',
+        onChange(editor) {
+            const html = editor.getHtml()
+            // console.log('editor content', html)
+            // 也可以同步到 <textarea>
+        },
+        MENU_CONF: {}
+    }
+    editorConfig.MENU_CONF['uploadImage'] = {
+        server: '/api/uploads',
+        maxFileSize: 10 * 1024 * 1024, // 10M
+        base64LimitSize: 5 * 1024, // insert base64 format, if file's size less than 5kb
+    }
+    const editor = createEditor({
+        selector: '#editor-container',
+        html: '<p><br></p>',
+        config: editorConfig,
+        mode: 'default', // or 'simple'
+    })
+    const toolbarConfig = {}
+    const toolbar = createToolbar({
+        editor,
+        selector: '#toolbar-container',
+        config: toolbarConfig,
+        mode: 'default', // or 'simple'
+    })
+
     document.getElementById('addUserForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const title = document.getElementById('title').value;
-        const isShow = document.getElementById('title').value;
-        const content = document.getElementById('content').value;
+        const isShow = document.getElementById('isShow').checked;
+        // const content = document.getElementById('content').value;
 
         axios.post('/api/add_news', {
             title: title,
-            content: content,
-            isShow: isShow !== "0",
+            content: editor.getHtml(),
+            isShow: isShow,
         }).then(function(response) {
             alert(response.data["message"]);
             window.location.replace("/")

@@ -4,27 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.news.Title}}</title>
-    <link rel="stylesheet" href="/assets/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script></head>
-  <p>{{.news.Content}}</p>
-  <p>Author: {{.Author}}</p>
-  <p> Time: {{.news.Timestamp}}</p>
-
-<form id="addCommentForm">
-    <input type="hidden" id="news_id" value="{{.news.ID}}">
-    <textarea id="content" placeholder="Add a comment"></textarea>
-    <br>
-    <button type="submit">Submit</button>
-</form>
-
-
-<h2>Comments</h2>
-{{range .comments}}
-    <div>
-        <p>{{.Content}}</p>
-        <p>Posted by: {{.Author}} at {{.Timestamp}}</p>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="index-body">
+<div class="index-main">
+    <div class="index-sidebar">
+        <h1 class="index-sidebar-title"><a href="/" class="index-sidebar-href-text">某某神社</a></h1>
+        <form id="searchNews" style="padding: 0 15%;" action="/search" method="get">
+            <label for="search"></label>
+            <input type="text" id="search" name="data" placeholder="搜索" class="login-username" style="width: 200px">
+        </form>
+        <h3 class="index-sidebar-href"><a href="/update_user" class="index-sidebar-href-text">修改用户</a></h3>
+        {{if .isAdmin}}
+            <h3 class="index-sidebar-href"><a href="/edit/{{.news.ID}}" class="index-sidebar-href-text">修改文章</a></h3>
+        {{end}}
+        <h3 class="index-sidebar-href"><a href="/logout" class="index-sidebar-href-text">登出</a></h3>
     </div>
-{{end}}
+    <div class="index-content" >
+        <div class="index-news" style="overflow: hidden;padding: 5% 10% 5%" >
+            <h2 style="font-size: 33px">{{.news.Title}}</h2>
+            <p>Author: {{.news.Author}}</p>
+            <p> Time: {{.news.Timestamp.Format "2006/1/2 15:04"}}</p>
+            <div class="news-content">
+                {{.news.Content}}
+            </div>
+
+        </div>
+
+        <div class="index-news">
+            <form id="addCommentForm">
+                <input type="hidden" id="news_id" value="{{.news.ID}}">
+                <div style="text-align: center">
+                    <h2 style="padding: 2% 0 0"><label for="content">评论</label></h2>
+                    <div>
+                        <textarea id="content" cols="70" rows="8" class="news-add-comment" ></textarea>
+                    </div>
+                    <button type="submit" class="login-button" style="margin: 2% 0 5%">Submit</button>
+
+                </div>
+            </form>
+        </div>
+
+        {{range .comments}}
+            <div class="index-news" style="padding: 5% 10% 5%">
+                <div>
+                    <p style="font-size: 22px;color: #22313f;">{{.Author}}</p>
+                    <p style="font-size: 18px;color: #22313f;">{{.Timestamp.Format "2006/1/2 15:04"}}</p>
+                    <p class="news-content">{{.Content}}</p>
+                </div>
+            </div>
+        {{end}}
+        </div>
+    </div>
+
+
+</div>
+</body>
 
 <script>
     document.getElementById('addCommentForm').addEventListener('submit', function(e) {

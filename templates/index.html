@@ -4,12 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My News</title>
-    <link rel="stylesheet" href="/assets/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
-<h1>My News Site</h1>
-<ul>
-    {{range .}}
-        <li><a href="/news/{{.ID}}">{{.Title}}</a></li>
-    {{end}}
-</ul>
+<body class="index-body">
+<div class="index-main">
+    <div class="index-sidebar">
+        <h1 class="index-sidebar-title"><a href="/" class="index-sidebar-href-text">某某神社</a></h1>
+        <form id="searchNews" style="padding: 0 15%;" action="/search" method="get">
+            <label for="search"></label>
+            <input type="text" id="search" name="data" placeholder="搜索" class="login-username" style="width: 200px">
+        </form>
+        <h3 class="index-sidebar-href"><a href="/update_user" class="index-sidebar-href-text">修改用户</a></h3>
+        {{if .isAdmin}}
+            <h3 class="index-sidebar-href"><a href="/add_news" class="index-sidebar-href-text">添加文章</a></h3>
+        {{end}}
+        <h3 class="index-sidebar-href"><a href="/logout" class="index-sidebar-href-text">登出</a></h3>
+    </div>
+    <div class="index-content">
+        {{range .news}}
+            <div class="index-news">
+                <div class="index-news-header">
+                    <h2 class="index-news-title">
+                        <a class="index-news-title-text" href="/news/{{.ID}}">{{.Title}}</a>
+                    </h2>
+                </div>
+                <blockquote class="index-news-time"> {{.Timestamp.Format "2006/1/2 15:04"}} </blockquote>
+                <div class="index-news-content">
+                    {{.Content}}
+                </div>
+                <div class="index-news-href">
+                    <a class="index-news-title-text" href="/news/{{.ID}}">查看更多</a>
+                </div>
+                <div class="index-news-footer">
+                    <span>Write by</span>
+                    <span style="color: #008B8B"> {{.Author}} </span>
+                </div>
+            </div>
+        {{end}}
+
+    </div>
+</div>
+</body>
 </html>
