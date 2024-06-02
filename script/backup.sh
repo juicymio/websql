@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DB_USER="root"
-DB_PASSWORD="root"
+DB_PASSWORD="889047ll"
 DB_NAME="websql"
 
 BACKUP_DIR="../backup"

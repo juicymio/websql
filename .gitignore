@@ -3,3 +3,4 @@ uploads/*
 go_build_websql
 websql
 backup/*
+.DS_Store

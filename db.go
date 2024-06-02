@@ -3,13 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 func connectDb() (db *gorm.DB) {
-	dsn := "root:root@tcp(127.0.0.1:3306)/websql?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:889047ll@tcp(127.0.0.1:3306)/websql?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	checkErr(err)
 	err = db.AutoMigrate(&Users{})
@@ -25,14 +26,14 @@ func connectDb() (db *gorm.DB) {
 	return db
 }
 
-func testDb(db *gorm.DB) {
-	rows, err := db.Raw("SHOW databases").Rows()
-	checkErr(err)
-	for rows.Next() {
-		var name string
-		err = rows.Scan(&name)
-	}
-}
+// func testDb(db *gorm.DB) {
+// 	rows, err := db.Raw("SHOW databases").Rows()
+// 	checkErr(err)
+// 	for rows.Next() {
+// 		var name string
+// 		err = rows.Scan(&name)
+// 	}
+// }
 
 // User
 // 通过用户名查询密码并判断返回
