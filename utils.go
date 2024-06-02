@@ -19,19 +19,19 @@ type Users struct {
 }
 
 type Admins struct {
-	ID  int
-	UID int `gorm:"unique;constraint:OnDelete:CASCADE;"` //User ID
-	Users Users `gorm:"foreignKey:UID; references:ID"`
+	ID    int
+	UID   int   `gorm:"unique;constraint:OnDelete:CASCADE;"` //User ID
+	Users Users `gorm:"foreignKey:UID; references:ID;"`
 }
 
 type News struct {
-	ID        int
+	ID        int `gorm:"constraint:OnDelete:CASCADE;"` // newsID
 	UID       int `gorm:"constraint:OnDelete:CASCADE;"` // userID
 	Title     string
 	Content   string
 	IsShow    bool
 	Timestamp time.Time
-	Users Users `gorm:"foreignKey:UID; references:ID"`
+	Users     Users `gorm:"foreignKey:UID; references:ID;"`
 }
 
 type Comments struct {
@@ -41,8 +41,8 @@ type Comments struct {
 	// FID       int // father
 	Content   string
 	Timestamp time.Time
-	Users Users `gorm:"foreignKey:UID; references:ID"`
-	News News `gorm:"foreignKey:NID; references:ID"`
+	Users     Users `gorm:"foreignKey:UID; references:ID;"`
+	News      News  `gorm:"foreignKey:NID; references:ID;"`
 }
 
 type RenderComments struct {
@@ -61,12 +61,12 @@ type RenderNews struct {
 }
 
 type RateNews struct {
-	ID   int
-	UID  int `gorm:"constraint:OnDelete:CASCADE;"` // userID
-	NID  int `gorm:"constraint:OnDelete:CASCADE;"` // newsID
-	Rate int
-	Users Users `gorm:"foreignKey:UID; references:ID"`
-	News News `gorm:"foreignKey:NID; references:ID"`
+	ID    int
+	UID   int `gorm:"constraint:OnDelete:CASCADE;"` // userID
+	NID   int `gorm:"constraint:OnDelete:CASCADE;"` // newsID
+	Rate  int
+	Users Users `gorm:"foreignKey:UID; references:ID;"`
+	News  News  `gorm:"foreignKey:NID; references:ID;"`
 }
 
 func checkErr(err error) {
