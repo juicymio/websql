@@ -78,8 +78,15 @@ func register(db *gorm.DB, user Users) error {
 
 // 输入用户id更新信息
 func updateUser(db *gorm.DB, user Users) error {
-	if !errors.Is(db.Where("user_name = ?", user.UserName).First(&Users{}).Error, gorm.ErrRecordNotFound) {
-		return errors.New("user already exists")
+	var currentUser Users
+	if err := db.First(&currentUser, user.ID).Error; err != nil {
+		return err
+	}
+
+	if currentUser.UserName != user.UserName {
+		if !errors.Is(db.Where("user_name = ?", user.UserName).First(&Users{}).Error, gorm.ErrRecordNotFound) {
+			return errors.New("user name already exists")
+		}
 	}
 
 	res := db.Model(&user).Where("id = ?", user.ID).Updates(user)

@@ -48,9 +48,11 @@ func main() {
 			if mynew.IsShow || isAdmin {
 				_, author := userChange(db, mynew.UID, "")
 				rate, _ := getAverageRate(db, mynew.ID)
-				render := RenderNews{ID: mynew.ID, Title: mynew.Title, Author: author,
+				render := RenderNews{
+					ID: mynew.ID, Title: mynew.Title, Author: author,
 					Content: template.HTML(truncateHTML(mynew.Content, 100)),
-					Rate:    rate, Timestamp: mynew.Timestamp}
+					Rate:    rate, Timestamp: mynew.Timestamp,
+				}
 				outNews = append(outNews, render)
 			}
 		}
@@ -272,7 +274,7 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		user = Users{ID: uid.(int), UserName: user.UserName, Password: user.Password}
+		user = Users{ID: uid.(int), UserName: user.UserName, Password: getPasswordHash(user.Password)}
 		err := updateUser(db, user)
 		if err == nil {
 			session.Clear()
