@@ -48,9 +48,11 @@ func main() {
 			if mynew.IsShow || isAdmin {
 				_, author := userChange(db, mynew.UID, "")
 				rate, _ := getAverageRate(db, mynew.ID)
-				render := RenderNews{ID: mynew.ID, Title: mynew.Title, Author: author,
+				render := RenderNews{
+					ID: mynew.ID, Title: mynew.Title, Author: author,
 					Content: template.HTML(truncateHTML(mynew.Content, 100)),
-					Rate:    rate, Timestamp: mynew.Timestamp}
+					Rate:    rate, Timestamp: mynew.Timestamp,
+				}
 				outNews = append(outNews, render)
 			}
 		}
@@ -65,7 +67,7 @@ func main() {
 		// 渲染
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"news":    outNews,
-			"popular": outPopular[:10],
+			"popular": outPopular,
 			"isAdmin": isAdmin,
 		})
 	})
@@ -135,7 +137,7 @@ func main() {
 			c.HTML(http.StatusOK, "news.html", gin.H{
 				"news":     renderNews,
 				"isAdmin":  isAdmin,
-				"popular":  outPopular[:10],
+				"popular":  outPopular,
 				"rate":     rate,
 				"comments": outComments,
 			})
