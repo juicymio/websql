@@ -182,7 +182,7 @@ func getAverageRate(db *gorm.DB, NID int) (float32, error) {
 	var rates []RateNews
 	db.Where("n_id = ?", NID).Find(&rates)
 	if len(rates) == 0 {
-		return 2.5, nil
+		return 0, nil
 	} else {
 		var total float32
 		for _, rate := range rates {
