@@ -17,6 +17,7 @@ import (
 )
 
 func main() {
+	// 初始化
 	db := connectDb()
 	r := gin.Default()
 
@@ -27,8 +28,9 @@ func main() {
 	r.Static("/uploads", "./uploads")
 	r.LoadHTMLGlob("templates/*")
 
-	// frontend
+	// 前端
 	r.GET("/", func(c *gin.Context) {
+		// 鉴权，未登录重定向至登录，下同
 		session := sessions.Default(c)
 		uid := session.Get("uid")
 		if uid == nil {
@@ -39,8 +41,9 @@ func main() {
 		news := getAllNews(db)
 		popular, _ := getOrderNews(db)
 		var outNews []RenderNews
-		var outPopuler []News
+		var outPopular []News
 
+		// 获取要输出的文章
 		for _, mynew := range news {
 			if mynew.IsShow || isAdmin {
 				_, author := userChange(db, mynew.UID, "")
@@ -52,15 +55,17 @@ func main() {
 			}
 		}
 
+		// 获取top文章
 		for _, mynew := range popular {
 			if mynew.IsShow || isAdmin {
-				outPopuler = append(outPopuler, mynew)
+				outPopular = append(outPopular, mynew)
 			}
 		}
 
+		// 渲染
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"news":    outNews,
-			"popular": outPopuler,
+			"popular": outPopular[:10],
 			"isAdmin": isAdmin,
 		})
 	})
@@ -101,7 +106,8 @@ func main() {
 			c.HTML(http.StatusNotFound, "404.html", nil)
 			return
 		}
-		// news.Content = n
+
+		// 获取所有评论
 		comments, err := getComments(db, id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve comments"})
@@ -115,11 +121,11 @@ func main() {
 		}
 
 		popular, _ := getOrderNews(db)
-		var outPopuler []News
+		var outPopular []News
 		rate, _ := getRate(db, news.ID, uid.(int))
 		for _, mynew := range popular {
 			if mynew.IsShow || isAdmin {
-				outPopuler = append(outPopuler, mynew)
+				outPopular = append(outPopular, mynew)
 			}
 		}
 
@@ -129,7 +135,7 @@ func main() {
 			c.HTML(http.StatusOK, "news.html", gin.H{
 				"news":     renderNews,
 				"isAdmin":  isAdmin,
-				"popular":  outPopuler,
+				"popular":  outPopular[:10],
 				"rate":     rate,
 				"comments": outComments,
 			})
@@ -173,7 +179,6 @@ func main() {
 			c.Redirect(http.StatusFound, "/login")
 			return
 		}
-		// TODO: add search function
 		query := c.Query("data")           // Get search query from request parameters
 		news, err := searchNews(db, query) // Call searchNews function
 		if err != nil {
@@ -203,6 +208,7 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		// 检查用户名格式
 		match, _ := regexp.MatchString(`^[A-Za-z0-9]{3,32}$`, user.UserName)
 		if !match {
 			c.JSON(http.StatusOK, gin.H{"message": "invalid user name"})
@@ -222,7 +228,11 @@ func main() {
 	r.GET("/logout", func(c *gin.Context) {
 		session := sessions.Default(c)
 		session.Clear()
-		session.Save()
+		err := session.Save()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to logout"})
+			return
+		}
 		c.SetCookie("session", "", -1, "/", "127.0.0.1", false, false)
 		c.Redirect(http.StatusFound, "/login")
 	})
@@ -238,7 +248,11 @@ func main() {
 			session := sessions.Default(c)
 			session.Set("uid", uid)
 			session.Set("isAdmin", false)
-			session.Save()
+			err1 := session.Save()
+			if err1 != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to login"})
+				return
+			}
 			c.JSON(http.StatusOK, gin.H{"message": "login successfully"})
 		} else {
 			c.JSON(http.StatusOK, gin.H{"message": "username or password error"})
@@ -262,7 +276,11 @@ func main() {
 		err := updateUser(db, user)
 		if err == nil {
 			session.Clear()
-			session.Save()
+			err1 := session.Save()
+			if err1 != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to update"})
+				return
+			}
 			c.SetCookie("session", "", -1, "/", "127.0.0.1", false, false)
 			c.JSON(http.StatusOK, gin.H{"message": "update success"})
 		} else if errors.Is(err, errors.New("user already exists")) {
@@ -283,7 +301,11 @@ func main() {
 			session := sessions.Default(c)
 			session.Set("uid", uid)
 			session.Set("isAdmin", true)
-			session.Save()
+			err1 := session.Save()
+			if err1 != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to login"})
+				return
+			}
 			c.JSON(http.StatusOK, gin.H{"message": "login successfully"})
 		} else {
 			c.JSON(http.StatusOK, gin.H{"message": "username or password error"})
@@ -386,6 +408,10 @@ func main() {
 		if err := c.ShouldBindJSON(&rate); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
+		if rate.Rate > 5 || rate.Rate < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Rate out of range"})
+		}
+
 		rate = RateNews{UID: uid.(int), NID: rate.NID, Rate: rate.Rate}
 		if updateRate(db, rate) == nil {
 			c.JSON(http.StatusOK, gin.H{"message": "Rate added successfully"})
@@ -393,26 +419,6 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to add rate"})
 		}
 	})
-
-	//r.POST("/api/like", func(c *gin.Context) {
-	//	session := sessions.Default(c)
-	//	uid := session.Get("uid")
-	//	if uid == nil {
-	//		c.JSON(http.StatusUnauthorized, gin.H{"error": "Login first!"})
-	//		return
-	//	}
-	//
-	//	var like LikeComment
-	//	if err := c.ShouldBindJSON(&like); err != nil {
-	//		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	//	}
-	//	like = LikeComment{UID: uid.(int), CID: like.CID, Value: like.Value}
-	//	if addLike(db, like) == nil {
-	//		c.JSON(http.StatusOK, gin.H{"message": "Like added successfully"})
-	//	} else {
-	//		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to add like"})
-	//	}
-	//})
 
 	r.POST("/api/uploads", func(c *gin.Context) {
 		session := sessions.Default(c)
@@ -433,13 +439,21 @@ func main() {
 				return
 			}
 			fileName := getMd5(fmt.Sprintf("%s%s", f.Filename, time.Now().String()))
-			fildDir := fmt.Sprintf("uploads/%d%s/", time.Now().Year(), time.Now().Month().String())
-			_, res := os.Stat(fildDir)
+			fileDir := fmt.Sprintf("uploads/%d%s/", time.Now().Year(), time.Now().Month().String())
+			_, res := os.Stat(fileDir)
 			if os.IsNotExist(res) {
-				os.Mkdir(fildDir, os.ModePerm)
+				err1 := os.Mkdir(fileDir, os.ModePerm)
+				if err1 != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to upload"})
+					return
+				}
 			}
-			filepath := fmt.Sprintf("%s%s%s", fildDir, fileName, fileExt)
-			c.SaveUploadedFile(f, filepath)
+			filepath := fmt.Sprintf("%s%s%s", fileDir, fileName, fileExt)
+			err1 := c.SaveUploadedFile(f, filepath)
+			if err1 != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to upload"})
+				return
+			}
 			c.JSON(http.StatusOK, gin.H{"errno": 0, "data": gin.H{"url": "/" + filepath}})
 		}
 	})

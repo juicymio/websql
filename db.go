@@ -6,7 +6,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"os/exec"
 )
 
 func connectDb() (db *gorm.DB) {
@@ -23,8 +22,6 @@ func connectDb() (db *gorm.DB) {
 	checkErr(err)
 	err = db.AutoMigrate(&RateNews{})
 	checkErr(err)
-	err = db.AutoMigrate(&Comments{})
-	checkErr(err)
 	return db
 }
 
@@ -35,25 +32,6 @@ func testDb(db *gorm.DB) {
 		var name string
 		err = rows.Scan(&name)
 	}
-}
-
-// TODO: Add frontend interface
-func backupDb(dbName, username, password, backupFile string) error {
-	cmd := fmt.Sprintf("mysqldump -u%s -p%s %s > %s", username, password, dbName, backupFile)
-	_, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func restoreDb(dbName, username, password, backupFile string) error {
-	cmd := fmt.Sprintf("mysql -u%s -p%s %s < %s", username, password, dbName, backupFile)
-	_, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // User
@@ -73,6 +51,7 @@ func checkUser(db *gorm.DB, users Users) (int, error) {
 	}
 }
 
+// 用户用户名和id互转
 func userChange(db *gorm.DB, id int, username string) (int, string) {
 	var user Users
 	if username == "" {
@@ -104,7 +83,7 @@ func updateUser(db *gorm.DB, user Users) error {
 }
 
 // Admin
-
+// 返回是否为admin
 func checkAdmin(db *gorm.DB, users Users) (int, error) {
 	uid, err := checkUser(db, users)
 	if err != nil {
@@ -134,12 +113,14 @@ func deleteNews(db *gorm.DB, id int) error {
 	return res.Error
 }
 
+// 依据时间获取所有文章排序
 func getAllNews(db *gorm.DB) []News {
 	var news []News
-	db.Find(&news)
+	db.Order("timestamp DESC").Find(&news)
 	return news
 }
 
+// 依据id获取文章
 func getNews(db *gorm.DB, id string) (News, error) {
 	var news News
 	res := db.Where("id = ?", id).First(&news)
@@ -152,12 +133,14 @@ func addComment(db *gorm.DB, comments Comments) error {
 	return res.Error
 }
 
+// 获取某一文章所有评论
 func getComments(db *gorm.DB, NID string) ([]Comments, error) {
 	var comments []Comments
 	res := db.Where("n_id = ?", NID).Find(&comments)
 	return comments, res.Error
 }
 
+// 更新对文章的评价，如果未平均就创建评价
 func updateRate(db *gorm.DB, rate RateNews) error {
 	if errors.Is(db.Where("n_id = ? AND uid = ?", rate.NID, rate.UID).First(&RateNews{}).Error, gorm.ErrRecordNotFound) {
 		res := db.Create(&rate)
@@ -169,16 +152,12 @@ func updateRate(db *gorm.DB, rate RateNews) error {
 	}
 }
 
-func addLike(db *gorm.DB, like LikeComment) error {
-	res := db.Create(&like)
-	return res.Error
-}
-
+// 搜索文章
 func searchNews(db *gorm.DB, query string) ([]News, error) {
 	var news []News
 
 	likeQuery := "%" + query + "%"
-	res := db.Joins("left join users on news.UID = users.ID").Where("news.Title LIKE ? OR news.Content LIKE ? OR users.user_name LIKE ?", likeQuery, likeQuery, likeQuery).Find(&news)
+	res := db.Joins("left join users on news.UID = users.ID").Where("news.Title LIKE ? OR news.Content LIKE ? OR users.user_name LIKE ?", likeQuery, likeQuery, likeQuery).Order("timestamp DESC").Find(&news)
 
 	if res.Error != nil {
 		return nil, res.Error
@@ -187,6 +166,7 @@ func searchNews(db *gorm.DB, query string) ([]News, error) {
 	return news, nil
 }
 
+// 获取某一用户对某一文章的评价
 func getRate(db *gorm.DB, NID int, UID int) (int, error) {
 	var rate RateNews
 	res := db.Where("n_id = ? AND uid = ?", NID, UID).First(&rate)
@@ -197,6 +177,7 @@ func getRate(db *gorm.DB, NID int, UID int) (int, error) {
 	}
 }
 
+// 获取某一文章的平均分
 func getAverageRate(db *gorm.DB, NID int) (float32, error) {
 	var rates []RateNews
 	db.Where("n_id = ?", NID).Find(&rates)
@@ -211,6 +192,7 @@ func getAverageRate(db *gorm.DB, NID int) (float32, error) {
 	}
 }
 
+// 依据平均分排序返回文章
 func getOrderNews(db *gorm.DB) ([]News, error) {
 	var news []News
 	db.Raw("SELECT n.*, AVG(r.rate) AS avg_rate FROM news n LEFT JOIN rate_news r ON n.id = r.n_id GROUP BY n.id ORDER BY avg_rate DESC").Scan(&news)

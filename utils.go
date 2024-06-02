@@ -63,35 +63,31 @@ type RateNews struct {
 	Rate int
 }
 
-type LikeComment struct {
-	ID    int
-	UID   int
-	CID   int
-	Value bool
-}
-
 func checkErr(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
+// 获取密码哈希
 func getPasswordHash(password string) string {
 	salt := "this is my salt"
 	hashInstance := sha256.New()
 	hashInstance.Write([]byte(password))
-	bytes := hashInstance.Sum(nil)
+	tmp := hashInstance.Sum(nil)
 	hashInstance.Reset()
-	hashInstance.Write([]byte(hex.EncodeToString(bytes) + salt))
+	hashInstance.Write([]byte(hex.EncodeToString(tmp) + salt))
 	return hex.EncodeToString(hashInstance.Sum(nil))
 }
 
+// 获取md5
 func getMd5(content string) string {
 	hashInstance := md5.New()
 	hashInstance.Write([]byte(content))
 	return hex.EncodeToString(hashInstance.Sum(nil))
 }
 
+// 获取文章摘要
 func truncateHTML(s string, maxLen int) string {
 	z := html.NewTokenizer(strings.NewReader(s))
 
