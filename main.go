@@ -444,7 +444,7 @@ func main() {
 			fileDir := fmt.Sprintf("uploads/%d%s/", time.Now().Year(), time.Now().Month().String())
 			_, res := os.Stat(fileDir)
 			if os.IsNotExist(res) {
-				err1 := os.Mkdir(fileDir, os.ModePerm)
+				err1 := os.MkdirAll(fileDir, os.ModePerm)
 				if err1 != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to upload"})
 					return
