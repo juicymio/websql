@@ -51,6 +51,17 @@
     color: rgba( 255, 255, 255, 0.7);
 }
 
+.index-sidebar-top-new {
+    font-size: 22px;
+    color: #fff;
+    text-decoration: none;
+}
+
+.index-sidebar-top-new:hover {
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+}
+
 .index-content {
     display: block;
     float: left;
@@ -126,6 +137,76 @@
     resize: none;
     font-size: 18px;
     padding: 0.5em;
+}
+
+.news-star {
+    appearance: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+}
+
+.news-rate {
+    display: flex;
+    flex-flow: row-reverse;
+    justify-content: center;
+    margin-top: 3%;
+}
+
+input[name="rate"] {
+    /*font-family: "iconfont";*/
+    font-size: 30px;
+    padding-right: 10px;
+    transition: all 0.4s ease; /*元素变化的过渡时间*/
+}
+input[name="rate"]::after {
+    display: inline-block;
+    content: "";
+    background-image:url("/assets/image/start.svg");
+    background-size: 40px 40px;
+    width: 40px;
+    height: 40px;
+    color: #999;
+}
+input[name="rate"]:checked::after{
+    display: inline-block;
+    content: "";
+    background-image:url("/assets/image/startc.svg");
+    background-size: 40px 40px;
+    width: 40px;
+    height: 40px;
+    color: #ffa822;
+}
+input[name="rate"]:hover{
+    transform: scale(1.2);   /*缩放*/
+}
+input[name="rate"]:hover::after{
+    display: inline-block;
+    content: "";
+    background-image:url("/assets/image/startc.svg");
+    background-size: 40px 40px;
+    width: 40px;
+    height: 40px;
+    color: #ffa822;
+}
+
+input[name="rate"]:checked ~ input[name="rate"]::after {
+    display: inline-block;
+    content: "";
+    background-image:url("/assets/image/startc.svg");
+    background-size: 40px 40px;
+    width: 40px;
+    height: 40px;
+    color: #ffa822;
+}
+input[name="rate"]:hover ~ input[name="rate"]::after {
+    display: inline-block;
+    content: "";
+    background-image:url("/assets/image/startc.svg");
+    background-size: 40px 40px;
+    width: 40px;
+    height: 40px;
+    color: #ffa822;
 }
 
 /*edit*/

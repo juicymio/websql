@@ -34,7 +34,6 @@ func testDb(db *gorm.DB) {
 	for rows.Next() {
 		var name string
 		err = rows.Scan(&name)
-		fmt.Println(name)
 	}
 }
 
@@ -77,7 +76,6 @@ func checkUser(db *gorm.DB, users Users) (int, error) {
 func userChange(db *gorm.DB, id int, username string) (int, string) {
 	var user Users
 	if username == "" {
-		//fmt.Println(id)
 		db.Select("user_name").Where("id = ?", id).First(&user)
 		return -1, user.UserName
 	} else {
@@ -157,16 +155,51 @@ func addComment(db *gorm.DB, comments Comments) error {
 func getComments(db *gorm.DB, NID string) ([]Comments, error) {
 	var comments []Comments
 	res := db.Where("n_id = ?", NID).Find(&comments)
-	fmt.Println(comments)
 	return comments, res.Error
 }
 
-func addRate(db *gorm.DB, rate RateNews) error {
-	res := db.Create(&rate)
-	return res.Error
+func updateRate(db *gorm.DB, rate RateNews) error {
+	if errors.Is(db.Where("n_id = ? AND uid = ?", rate.NID, rate.UID).First(&RateNews{}).Error, gorm.ErrRecordNotFound) {
+		res := db.Create(&rate)
+		return res.Error
+	} else {
+		fmt.Println(rate)
+		res := db.Model(&rate).Where("n_id = ? AND uid = ?", rate.NID, rate.UID).Updates(rate)
+		return res.Error
+	}
 }
 
 func addLike(db *gorm.DB, like LikeComment) error {
 	res := db.Create(&like)
 	return res.Error
+}
+
+func getRate(db *gorm.DB, NID int, UID int) (int, error) {
+	var rate RateNews
+	res := db.Where("n_id = ? AND uid = ?", NID, UID).First(&rate)
+	if res.Error != nil {
+		return -1, res.Error
+	} else {
+		return rate.Rate, nil
+	}
+}
+
+func getAverageRate(db *gorm.DB, NID int) (float32, error) {
+	var rates []RateNews
+	db.Where("n_id = ?", NID).Find(&rates)
+	if len(rates) == 0 {
+		return 2.5, nil
+	} else {
+		var total float32
+		for _, rate := range rates {
+			total += float32(rate.Rate)
+		}
+		return total / float32(len(rates)), nil
+	}
+}
+
+func getOrderNews(db *gorm.DB) ([]News, error) {
+	var news []News
+	db.Raw("SELECT n.*, AVG(r.rate) AS avg_rate FROM news n LEFT JOIN rate_news r ON n.id = r.n_id GROUP BY n.id ORDER BY avg_rate DESC").Scan(&news)
+	return news, nil
 }

@@ -51,6 +51,7 @@ type RenderNews struct {
 	Title     string
 	Author    string
 	Content   template.HTML
+	Rate      float32
 	Timestamp time.Time
 }
 

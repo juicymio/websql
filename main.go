@@ -36,17 +36,30 @@ func main() {
 		}
 		isAdmin := session.Get("isAdmin").(bool)
 		news := getAllNews(db)
+		popular, _ := getOrderNews(db)
 		var outNews []RenderNews
+		var outPopuler []News
 
 		for _, mynew := range news {
 			if mynew.IsShow || isAdmin {
 				_, author := userChange(db, mynew.UID, "")
-				render := RenderNews{ID: mynew.ID, Title: mynew.Title, Author: author, Content: template.HTML(truncateHTML(mynew.Content, 100)), Timestamp: mynew.Timestamp}
+				rate, _ := getAverageRate(db, mynew.ID)
+				render := RenderNews{ID: mynew.ID, Title: mynew.Title, Author: author,
+					Content: template.HTML(truncateHTML(mynew.Content, 100)),
+					Rate:    rate, Timestamp: mynew.Timestamp}
 				outNews = append(outNews, render)
 			}
 		}
+
+		for _, mynew := range popular {
+			if mynew.IsShow || isAdmin {
+				outPopuler = append(outPopuler, mynew)
+			}
+		}
+
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"news":    outNews,
+			"popular": outPopuler,
 			"isAdmin": isAdmin,
 		})
 	})
@@ -100,13 +113,23 @@ func main() {
 			outComments = append(outComments, RenderComments{Author: author, Content: myComments.Content, Timestamp: myComments.Timestamp})
 		}
 
+		popular, _ := getOrderNews(db)
+		var outPopuler []News
+		rate, _ := getRate(db, news.ID, uid.(int))
+		for _, mynew := range popular {
+			if mynew.IsShow || isAdmin {
+				outPopuler = append(outPopuler, mynew)
+			}
+		}
+
 		if news.IsShow || isAdmin {
 			_, NewsAuthor := userChange(db, news.UID, "")
 			renderNews := RenderNews{ID: news.ID, Title: news.Title, Author: NewsAuthor, Content: template.HTML(news.Content), Timestamp: news.Timestamp}
-			fmt.Println(renderNews.Content)
 			c.HTML(http.StatusOK, "news.html", gin.H{
 				"news":     renderNews,
 				"isAdmin":  isAdmin,
+				"popular":  outPopuler,
+				"rate":     rate,
 				"comments": outComments,
 			})
 		} else {
@@ -343,32 +366,32 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
 		rate = RateNews{UID: uid.(int), NID: rate.NID, Rate: rate.Rate}
-		if addRate(db, rate) == nil {
+		if updateRate(db, rate) == nil {
 			c.JSON(http.StatusOK, gin.H{"message": "Rate added successfully"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to add rate"})
 		}
 	})
 
-	r.POST("/api/like", func(c *gin.Context) {
-		session := sessions.Default(c)
-		uid := session.Get("uid")
-		if uid == nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Login first!"})
-			return
-		}
-
-		var like LikeComment
-		if err := c.ShouldBindJSON(&like); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		}
-		like = LikeComment{UID: uid.(int), CID: like.CID, Value: like.Value}
-		if addLike(db, like) == nil {
-			c.JSON(http.StatusOK, gin.H{"message": "Like added successfully"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to add like"})
-		}
-	})
+	//r.POST("/api/like", func(c *gin.Context) {
+	//	session := sessions.Default(c)
+	//	uid := session.Get("uid")
+	//	if uid == nil {
+	//		c.JSON(http.StatusUnauthorized, gin.H{"error": "Login first!"})
+	//		return
+	//	}
+	//
+	//	var like LikeComment
+	//	if err := c.ShouldBindJSON(&like); err != nil {
+	//		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	//	}
+	//	like = LikeComment{UID: uid.(int), CID: like.CID, Value: like.Value}
+	//	if addLike(db, like) == nil {
+	//		c.JSON(http.StatusOK, gin.H{"message": "Like added successfully"})
+	//	} else {
+	//		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to add like"})
+	//	}
+	//})
 
 	r.POST("/api/uploads", func(c *gin.Context) {
 		session := sessions.Default(c)

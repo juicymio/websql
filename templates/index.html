@@ -19,6 +19,14 @@
             <h3 class="index-sidebar-href"><a href="/add_news" class="index-sidebar-href-text">添加文章</a></h3>
         {{end}}
         <h3 class="index-sidebar-href"><a href="/logout" class="index-sidebar-href-text">登出</a></h3>
+        <div style="padding: 5% 15%;">
+            <h3>最高评分</h3>
+            {{range .popular}}
+                <div style="margin-top: 5%;">
+                    <a href="/news/{{.ID}}" class="index-sidebar-top-new">{{.Title}}</a>
+                </div>
+            {{end}}
+        </div>
     </div>
     <div class="index-content">
         {{range .news}}
@@ -36,8 +44,14 @@
                     <a class="index-news-title-text" href="/news/{{.ID}}">查看更多</a>
                 </div>
                 <div class="index-news-footer">
-                    <span>Write by</span>
-                    <span style="color: #008B8B"> {{.Author}} </span>
+                    <div>
+                        <span>Write by</span>
+                        <span style="color: #008B8B"> {{.Author}} </span>
+                    </div>
+                    <div style="margin: 2% 0 0;font-size: 18px;">
+                        <span>平均分</span>
+                        <span style="color: #008B8B;font-size: 22px">{{.Rate}}</span>
+                    </div>
                 </div>
             </div>
         {{end}}

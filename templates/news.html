@@ -20,6 +20,14 @@
             <h3 class="index-sidebar-href"><a href="/edit/{{.news.ID}}" class="index-sidebar-href-text">修改文章</a></h3>
         {{end}}
         <h3 class="index-sidebar-href"><a href="/logout" class="index-sidebar-href-text">登出</a></h3>
+        <div style="padding: 5% 15%;">
+            <h3>最高评分</h3>
+            {{range .popular}}
+                <div style="margin-top: 5%;">
+                    <a href="/news/{{.ID}}" class="index-sidebar-top-new">{{.Title}}</a>
+                </div>
+            {{end}}
+        </div>
     </div>
     <div class="index-content" >
         <div class="index-news" style="overflow: hidden;padding: 5% 10% 5%" >
@@ -29,7 +37,18 @@
             <div class="news-content">
                 {{.news.Content}}
             </div>
-
+            <form id="rate-form">
+                <div class="news-rate">
+                    <input type="radio" name="rate" class="news-star">
+                    <input type="radio" name="rate" class="news-star">
+                    <input type="radio" name="rate" class="news-star">
+                    <input type="radio" name="rate" class="news-star">
+                    <input type="radio" name="rate" class="news-star">
+                </div>
+                <div style="margin: 2% 0;text-align: center">
+                    <button type="submit" class="login-button" style="margin: 0">评分</button>
+                </div>
+            </form>
         </div>
 
         <div class="index-news">
@@ -63,6 +82,12 @@
 </body>
 
 <script>
+
+    window.onload = function(){
+        let radio = document.getElementsByName("rate");
+        radio[5-{{.rate}}].checked = true;
+    }
+
     document.getElementById('addCommentForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const newsID = document.getElementById('news_id').value;
@@ -79,6 +104,28 @@
             console.error(error);
         });
     });
+    document.getElementById('rate-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const newsID = document.getElementById('news_id').value;
+        let radio = document.getElementsByName("rate");
+        for (i=0; i<radio.length; i++) {
+            if (radio[i].checked) {
+                axios.post('/api/rate', {
+                    nid: Number(newsID),
+                    rate: 5 - i,
+                }).then(function(response) {
+                    alert(response.data["message"]);
+                    location.reload();
+                }).catch(function(error) {
+                    alert('Failed to rate');
+                    console.error(error);
+                });
+            }
+        }
+
+
+    });
+
 </script>
 
 </html>
