@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
@@ -10,7 +11,9 @@ import (
 )
 
 func connectDb() (db *gorm.DB) {
-	dsn := "root:889047ll@tcp(127.0.0.1:3306)/websql?charset=utf8mb4&parseTime=True&loc=Local"
+	password := os.Getenv("MYSQL_ROOT_PASSWORD")
+
+	dsn := fmt.Sprintf("root:%s@tcp(127.0.0.1:3306)/websql?charset=utf8mb4&parseTime=True&loc=Local", password)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	checkErr(err)
 	err = db.AutoMigrate(&Users{})
