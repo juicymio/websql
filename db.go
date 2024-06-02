@@ -113,15 +113,18 @@ func updateNews(db *gorm.DB, news News) error {
 }
 
 func deleteNews(db *gorm.DB, id int) error {
-	res := db.Where("n_id = ?", id).Delete(&Comments{})
-	if res.Error != nil {
-		return res.Error
-	}
-	res = db.Where("n_id = ?", id).Delete(&RateNews{})
-	if res.Error != nil {
-		return res.Error
-	}
-	res = db.Where("id = ?", id).Delete(&News{})
+	/*
+		res := db.Where("n_id = ?", id).Delete(&Comments{})
+		if res.Error != nil {
+			return res.Error
+		}
+		res = db.Where("n_id = ?", id).Delete(&RateNews{})
+		if res.Error != nil {
+			return res.Error
+		}
+		res = db.Where("id = ?", id).Delete(&News{})
+	*/
+	res := db.Where("id = ?", id).Delete(&News{})
 	return res.Error
 }
 
