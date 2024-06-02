@@ -93,7 +93,7 @@
     });
 
     document.getElementById('delete').addEventListener('click', function(e) {
-        const nid = document.getElementById('nid').innerText;
+        const nid = document.getElementById('nid').value;
 
         axios.post('/api/delete_news', {
             id: Number(nid),
