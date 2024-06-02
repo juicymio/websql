@@ -5,10 +5,11 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
-	"golang.org/x/net/html"
 	"html/template"
 	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 type Users struct {
@@ -35,7 +36,7 @@ type Comments struct {
 	ID  int
 	UID int // userID
 	NID int // newsID
-	//FID       int // father
+	// FID       int // father
 	Content   string
 	Timestamp time.Time
 }

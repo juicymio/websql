@@ -174,6 +174,19 @@ func addLike(db *gorm.DB, like LikeComment) error {
 	return res.Error
 }
 
+func searchNews(db *gorm.DB, query string) ([]News, error) {
+	var news []News
+
+	likeQuery := "%" + query + "%"
+	res := db.Joins("left join users on news.UID = users.ID").Where("news.Title LIKE ? OR news.Content LIKE ? OR users.user_name LIKE ?", likeQuery, likeQuery, likeQuery).Find(&news)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return news, nil
+}
+
 func getRate(db *gorm.DB, NID int, UID int) (int, error) {
 	var rate RateNews
 	res := db.Where("n_id = ? AND uid = ?", NID, UID).First(&rate)
