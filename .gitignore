@@ -2,3 +2,4 @@ uploads/*
 .idea/*
 go_build_websql
 websql
+backup/*
