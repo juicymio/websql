@@ -16,12 +16,15 @@ type Users struct {
 	ID       int
 	UserName string
 	Password string
+	Admins   Admins     `gorm:"foreignKey:UID; references:ID;constraint:OnDelete:CASCADE;"`
+	News     []News     `gorm:"foreignKey:UID;constraint:OnDelete:CASCADE;"`
+	Comments []Comments `gorm:"foreignKey:UID;constraint:OnDelete:CASCADE;"`
+	RateNews []RateNews `gorm:"foreignKey:UID;constraint:OnDelete:CASCADE;"`
 }
 
 type Admins struct {
-	ID    int
-	UID   int   `gorm:"unique;constraint:OnDelete:CASCADE;"` // User ID
-	Users Users `gorm:"foreignKey:UID; references:ID;"`
+	ID  int
+	UID int
 }
 
 type News struct {
